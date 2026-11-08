@@ -1,0 +1,6 @@
+@echo off
+chcp 65001 >nul
+echo Starting local static web server at http://localhost:8080 ...
+start "" "http://localhost:8080"
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$listener = New-Object System.Net.HttpListener; $listener.Prefixes.Add('http://localhost:8080/'); $listener.Start(); Write-Host 'Server running at http://localhost:8080/ - Press Ctrl+C to stop.'; $mime = @{'.html'='text/html; charset=utf-8'; '.css'='text/css; charset=utf-8'; '.js'='application/javascript; charset=utf-8'; '.svg'='image/svg+xml'; '.wasm'='application/wasm'; '.json'='application/json'; '.sql'='text/plain; charset=utf-8'}; while ($listener.IsListening) { $ctx = $listener.GetContext(); $rel = $ctx.Request.Url.LocalPath.TrimStart('/'); if ([string]::IsNullOrEmpty($rel)) { $rel = 'index.html' }; $file = Join-Path (Get-Location) ($rel -replace '/','\'); if (Test-Path $file -PathType Leaf) { $ext = [System.IO.Path]::GetExtension($file).ToLower(); $ctx.Response.ContentType = if ($mime.ContainsKey($ext)) { $mime[$ext] } else { 'application/octet-stream' }; $bytes = [System.IO.File]::ReadAllBytes($file); $ctx.Response.ContentLength64 = $bytes.Length; $ctx.Response.OutputStream.Write($bytes, 0, $bytes.Length) } else { $ctx.Response.StatusCode = 404 }; $ctx.Response.Close() }"
